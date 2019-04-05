@@ -20,7 +20,7 @@ def pentad_mean_climatology(data, years):  # Function to get pentad of year
         data_year = data.sel(time=str(year))
         if len(data_year.time)==366:
             pentad = np.repeat(np.arange(1., 74.), 5)
-            pentad = np.insert(pentad, 10, 2)    
+            pentad = np.insert(pentad, 59, 12)    
         else:
             pentad = np.repeat(np.arange(1., 74.), 5)    
         pentad_years = np.concatenate((pentad_years, pentad))
