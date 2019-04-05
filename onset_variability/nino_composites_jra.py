@@ -9,29 +9,51 @@ from pylab import rcParams
 from mpl_toolkits.mplot3d import Axes3D
 import statsmodels.api as sm
 from data_handling_updates import gradients as gr, model_constants as mc
-from windspharm.xarray import VectorWind
+import pandas as pd
 
-plot_dir = '/scratch/rg419/plots/onset_variability/'
+plot_dir = '/scratch/rg419/plots/onset_variability_new/'
 mkdir = sh.mkdir.bake('-p')
 mkdir(plot_dir)
 
 # Load in nino_34 index
 nino_34 = xr.open_dataset('/scratch/rg419/obs_and_reanalysis/nino_34.nc')
+nino_34_march = nino_34.nino_34.sel(time=pd.to_datetime(['%04d-03-15' % y for y in range(1958,2017)]))
+nino_34_jan = nino_34.nino_34.sel(time=pd.to_datetime(['%04d-01-15' % y for y in range(1958,2017)]))
+nino_34_feb = nino_34.nino_34.sel(time=pd.to_datetime(['%04d-02-15' % y for y in range(1958,2017)]))
 
+years = np.arange(1958,2017)
+
+# Decide whether nino index is El Nino or La Nina
+def get_phase(nino_34):
+    enso_phase = []
+    i=0
+    for i in range(len(nino_34.time)):
+        if nino_34[i] >= 0.5:
+            enso_phase.append('El Nino')
+        elif nino_34[i] <= -0.5:
+            enso_phase.append('La Nina')
+        else:
+            enso_phase.append('Neutral')
+        i=i+1    
+    nino_34_out = xr.DataArray(nino_34, coords={'enso_phase': ('time', enso_phase), 'time': ('time', nino_34.time)}, dims=['time'])
+    return nino_34_out
+
+nino_34_march = get_phase(nino_34_march)
+nino_34_feb = get_phase(nino_34_feb)
+nino_34_jan = get_phase(nino_34_jan)
 
 # Plot nino_34 
-plt.plot(years,onsets_scsm,'o-', color='C0')
-plt.plot([1958,2016],[round(scsm_stats[0])]*2,'-', color='C0')
-plt.fill_between([1958,2016], [round(scsm_stats[0]) - 0.75*scsm_stats[1], round(scsm_stats[0]) - 0.75*scsm_stats[1]], 
-                              [round(scsm_stats[0]) + 0.75*scsm_stats[1], round(scsm_stats[0]) + 0.75*scsm_stats[1]], alpha=0.2, color='C0')
-plt.xlabel('Year')
-plt.ylabel('Onset pentad')
-plt.yticks(range(24,38,2))
-plt.grid(True,linestyle=':')
-plt.title('South China Sea Monsoon Onset')
-plt.savefig(plot_dir + 'scs_onsets_jra.pdf', format='pdf')
-plt.close()
-
+month = ['March', 'Feb', 'Jan']
+i=0
+for nino in [nino_34_march, nino_34_feb, nino_34_jan]:
+    plt.plot(nino.time,nino,'o-', color='C0')
+    plt.xlabel('Time')
+    plt.ylabel(month[i] + ' nino3.4 index')
+    plt.yticks(np.arange(-2.,2.1,0.5))
+    plt.grid(True,linestyle=':')
+    plt.savefig(plot_dir + 'nino_34_test_'+ month[i] + '.pdf', format='pdf')
+    plt.close()
+    i=i+1
 
 
 # Load in JRA data
@@ -53,44 +75,32 @@ data_z = xr.open_dataset('/disca/share/reanalysis_links/jra_55/1958_2016/height_
 
 data_mse = (mc.cp_air*data_t.var11 + mc.L*data_q.var51 + 9.81*data_z.var7)/1000.
 
-# Create a VectorWind instance to handle the computation
-w = VectorWind(data_u.sel(lev=np.arange(5000.,100001.,5000.)), data_v.sel(lev=np.arange(5000.,100001.,5000.)))
-# Compute variables
-streamfun, vel_pot = w.sfvp()
-uchi, vchi, upsi, vpsi = w.helmholtz()
-coslat = np.cos(data_u.lat * np.pi/180)
-
-dp=5000.
-# Evaluate mass fluxes for the zonal and meridional components (Walker and Hadley) following Schwendike et al. 2014
-mass_flux_zon = (gr.ddx(uchi)).cumsum('lev') * dp * coslat/ 9.81
-mass_flux_merid = (gr.ddy(vchi)).cumsum('lev') * dp * coslat/ 9.81
-
 land_mask = '/scratch/rg419/python_scripts/land_era/ERA-I_Invariant_0125.nc'
 land = xr.open_dataset(land_mask)
 
 
 def plot_winter_climate(data, title, levels_clim=np.arange(-50.,51.,5.), levels=np.arange(-5.,5.1,0.5), local=False, lev=20000.):
     
-    # Add a coordinate with the early/late/normal timing    
-    data.coords['timing'] = (('time'), np.repeat(onsets_scsm.timing.values,12)) 
+    # Add a coordinate with enso phase    
+    data.coords['enso_phase'] = (('time'), np.repeat(nino_34_jan.enso_phase.values,12)) 
     data = data.sel(lev=lev)
     
     data_clim = data.groupby('time.month').mean('time').sel(month=[1,2,3]).mean('month')
-    data_early = (data.where(data['timing']=='Early', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
-    data_normal = (data.where(data['timing']=='Normal', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
-    data_late = (data.where(data['timing']=='Late', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
+    data_en = (data.where(data['enso_phase']=='El Nino', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
+    data_ne= (data.where(data['enso_phase']=='Neutral', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
+    data_ln = (data.where(data['enso_phase']=='La Nina', drop=True).groupby('time.month').mean('time') - data.groupby('time.month').mean('time')).sel(month=[1,2,3]).mean('month')
     
     # Start figure with 4 subplots
     rcParams['figure.figsize'] = 15, 4.5
     rcParams['font.size'] = 14
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, sharey='row')
     axes = [ax1, ax2, ax3, ax4]
-    title_list = ['Climatology', 'Early onset', 'Normal onset', 'Late onset']
+    title_list = ['Climatology', 'La Nina', 'Neutral', 'El Nino']
     
     f1 = data_clim.plot.contourf(ax=ax1, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels_clim)
-    f2 = data_early.plot.contourf(ax=ax2, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
-    f3 = data_normal.plot.contourf(ax=ax3, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
-    f4 = data_late.plot.contourf(ax=ax4, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
+    f2 = data_ln.plot.contourf(ax=ax2, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
+    f3 = data_ne.plot.contourf(ax=ax3, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
+    f4 = data_en.plot.contourf(ax=ax4, x='lon',y='lat', add_labels=False, add_colorbar=False, extend='both', levels=levels)
     
     i=0
     for ax in axes:
@@ -112,7 +122,7 @@ def plot_winter_climate(data, title, levels_clim=np.arange(-50.,51.,5.), levels=
     plt.subplots_adjust(left=0.06, right=0.97, top=0.92, bottom=0.1, hspace=0.3, wspace=0.2)
     
     
-    if title=='mse_jra':
+    if title=='mse':
         cb1=fig.colorbar(f1, ax=ax1, use_gridspec=True, orientation = 'horizontal',fraction=0.07, pad=0.2, aspect=60, shrink=1., ticks=np.arange(250.,340.,20.))
     else:
         cb1=fig.colorbar(f1, ax=ax1, use_gridspec=True, orientation = 'horizontal',fraction=0.07, pad=0.2, aspect=30, shrink=1.)
@@ -120,9 +130,9 @@ def plot_winter_climate(data, title, levels_clim=np.arange(-50.,51.,5.), levels=
     #cb1.set_label(var)
     
     if local:
-        plt.savefig('/scratch/rg419/plots/onset_variability_new/early_vs_late/JFM_' + title + '_local.pdf', format='pdf')
+        plt.savefig('/scratch/rg419/plots/onset_variability_new/enso/JFM_enso_jan_' + title + '_local.pdf', format='pdf')
     else:
-        plt.savefig('/scratch/rg419/plots/onset_variability_new/early_vs_late/JFM_' + title + '.pdf', format='pdf')
+        plt.savefig('/scratch/rg419/plots/onset_variability_new/enso/JFM_enso_jan_' + title + '.pdf', format='pdf')
     plt.close()
     
 
@@ -132,10 +142,6 @@ plot_winter_climate(data_u, 'ucomp')
 plot_winter_climate(data_u, 'ucomp', local=True)
 plot_winter_climate(data_mse, 'mse', local=True, levels_clim=np.arange(250.,331.,10.), levels=np.arange(-2.5,2.7,0.25), lev=85000.)
 plot_winter_climate(data_mse, 'mse', levels_clim=np.arange(250.,331.,10.), levels=np.arange(-2.5,2.7,0.25), lev=85000.)
-#plot_winter_climate(mass_flux_zon, 'mass_flux_zon_jra', levels_clim=np.arange(-0.0055,0.0056,0.001), levels=np.arange(-0.0012,0.0013,0.0002))
-#plot_winter_climate(mass_flux_zon, 'mass_flux_zon_jra', local=True, levels_clim=np.arange(-0.0055,0.0056,0.001), levels=np.arange(-0.0012,0.0013,0.0002))
-#plot_winter_climate(mass_flux_merid, 'mass_flux_merid_jra', levels_clim=np.arange(-0.0055,0.0056,0.001), levels=np.arange(-0.0012,0.0013,0.0002))
-#plot_winter_climate(mass_flux_merid, 'mass_flux_merid_jra', local=True, levels_clim=np.arange(-0.0055,0.0056,0.001), levels=np.arange(-0.0012,0.0013,0.0002))
 
 data_u.close()
 data_v.close()
