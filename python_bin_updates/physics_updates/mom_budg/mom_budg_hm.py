@@ -5,9 +5,8 @@ Evaluate and plot momentum budget at 150 hPa - redo in line with reviewer 1s sug
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-from data_handling import time_means, month_dic
+from data_handling_updates import month_dic, gradients as gr
 import sh
-from physics import gradients as gr
 from pylab import rcParams
 
 
@@ -36,7 +35,7 @@ def partition_advection(data, lons, lev=150):
     data['u_dudx_stat'] = (('xofyear','lat'), u_dudx_stat )	
     data['u_dudx_zav']  = (('xofyear','lat'), u_dudx_zav )
     
-    print 'uu terms done'
+    print('uu terms done')
     
     #Next do uv terms
     uv_trans_dy = -86400. * gr.ddy( (data.ucomp_vcomp - data.ucomp * data.vcomp).sel(pfull=lev) , uv=True)
@@ -61,7 +60,7 @@ def partition_advection(data, lons, lev=150):
     data['v_dudy_stat'] = (('xofyear','lat'), v_dudy_stat)	
     data['v_dudy_zav']  = (('xofyear','lat'), v_dudy_zav )
     
-    print 'uv terms done'
+    print('uv terms done')
     
     #Finally do uw terms
     uw_trans_dp = -86400. * gr.ddp( (data.ucomp_omega - data.ucomp * data.omega).sel(lon=lons).mean('lon') )
@@ -86,11 +85,11 @@ def partition_advection(data, lons, lev=150):
     data['w_dudp_stat'] = (('xofyear','lat'), w_dudp_stat)	
     data['w_dudp_zav']  = (('xofyear','lat'), w_dudp_zav )	
     
-    print 'uw terms done'
+    print('uw terms done')
     
     
     
-def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fac=1.,lonin=[-1.,361.], plot_precip=True):
+def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fac=1.,lonin=[-1.,361.], plot_precip=True, rot_fac=1.):
     
     rcParams['figure.figsize'] = 12, 8
     rcParams['font.size'] = 18
@@ -100,7 +99,7 @@ def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fa
     mkdir = sh.mkdir.bake('-p')
     mkdir(plot_dir)
         
-    data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/'+run+'.nc')
+    data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/'+run+'.nc')
     
     if lonin[1]>lonin[0]:
         lons = [data.lon[i] for i in range(len(data.lon)) if data.lon[i] >= lonin[0] and data.lon[i] < lonin[1]]
@@ -111,7 +110,7 @@ def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fa
     partition_advection(data, lons, lev=150)
     
     #Coriolis
-    omega = 7.2921150e-5
+    omega = 7.2921150e-5 * rot_fac
     f = 2 * omega * np.sin(data.lat *np.pi/180)
     fv = data.vcomp.sel(pfull=lev) * f * 86400.
     fv_mean = fv.mean('lon')
@@ -145,9 +144,10 @@ def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fa
     mom_sum = fv_local + fv_mean + dphidx + mom_mean + mom_trans + mom_stat + mom_cross
     
     levels = np.arange(-20,21.1,2.)
+    #levels = np.arange(-2,2.1,0.2)
     
     mn_dic = month_dic(1)
-    tickspace = range(13,72,18)
+    tickspace = list(range(13,72,18))
     ticklabels = [mn_dic[(k+5)/6 ] for k in tickspace]
     
     # Nine subplots
@@ -201,7 +201,18 @@ def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fa
     plt.savefig(plot_dir + figname, format='pdf')
     plt.close()
 
-#mom_budg_hm('zs_sst')
+#mom_budg_hm('rt_0.500', rot_fac=0.5)
+#mom_budg_hm('rt_0.750', rot_fac=0.75)
+mom_budg_hm('sn_1.000_evap_fluxes_heattrans')
+#mom_budg_hm('rt_1.250', rot_fac=1.25)
+#mom_budg_hm('rt_1.500', rot_fac=1.5)
+#mom_budg_hm('rt_1.750', rot_fac=1.75)
+#mom_budg_hm('rt_2.000', rot_fac=2.0)
+
+#mom_budg_hm('half_shallow', lonin=[340,20])
+#mom_budg_hm('half_shallow', lonin=[70,110])
+#mom_budg_hm('half_shallow', lonin=[160,200])
+#mom_budg_hm('half_shallow', lonin=[250,290])
 #mom_budg_hm('ap10_qflux')
 #mom_budg_hm('ap10_co2')
 
@@ -210,8 +221,8 @@ def mom_budg_hm(run, lev=150, filename='plev_pentad', timeav='pentad', period_fa
 #mom_budg_hm('full_qflux', lonin=[60.,150.])
 #mom_budg_hm('sine_sst_10m')
 #mom_budg_hm('sn_1.000')
-mom_budg_hm('dry_ep', plot_precip=False)
-mom_budg_hm('dry_zs', plot_precip=False)
+#mom_budg_hm('dry_ep', plot_precip=False)
+#mom_budg_hm('dry_zs', plot_precip=False)
 #mom_budg_hm('flat_qflux', lonin=[60.,150.])
 #mom_budg_hm('am_qflux', lonin=[60.,150.])
 

@@ -8,7 +8,7 @@ Contains 4 functions:
 All plots are saved in /scratch/rg419/plots/vorticity_eq_clean/
 9/11/2017 - modified to have option to add psi contours to hm plots
 14/02/2018 - modified to allow non steady state lat lon output
-
+11/06/2018 - modified temporarily to read from the disca gv2 restore, and to read the qflux_ss file
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,8 @@ from hadley_cell import mass_streamfunction
 
 
 plot_dir = '/scratch/rg419/plots/vorticity_eq_clean/'
-
+mkdir = sh.mkdir.bake('-p')
+mkdir(plot_dir)
 
 def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_only=False, no_eddies=False, ll=False):
     '''Evaluate pentad mean vorticity budget and differences from daily snapshot budget RG 3/11/2017
@@ -35,10 +36,10 @@ def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_on
     
     
     #Load in vorticity budget term means
-    data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/vort_eq_'+run+'.nc')
+    data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/vort_eq_'+run+'.nc')
     if run in ['ap_2', 'full_qflux']:
         data_vort = data 
-        data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/vort_eq_uv'+run+'.nc')
+        data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/vort_eq_uv'+run+'.nc')
         
     print('vorticity budget data loaded')
     
@@ -68,7 +69,9 @@ def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_on
     horiz_md_mean = -86400.**2. * (data.ucomp * dvordx + data.vcomp * dvordy)
     
     # Calculate divergence and stretching term
-    div = gr.ddx(data.ucomp) + gr.ddy(data.vcomp)
+    u_dx = gr.ddx(data.ucomp)
+    v_dy = gr.ddy(data.vcomp)
+    div = u_dx + v_dy
     stretching_mean = -86400.**2. * vor * div
     
     
@@ -76,18 +79,24 @@ def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_on
         #Keep lon dimension if want a steady state lat-lon plot
         horiz_md_av = horiz_md_mean
         stretching_av = stretching_mean
+        dvordx_av = dvordx
         dvordy_av = dvordy
         vor_av = vor*86400.
         v_av = data.vcomp
         div_av = div*86400.
+        u_dx_av = u_dx*86400.
+        v_dy_av = v_dy*86400.
     else:
         # Take zonal mean of all over specified longitude range
         horiz_md_av = horiz_md_mean.sel(lon=lons).mean('lon')
         stretching_av = stretching_mean.sel(lon=lons).mean('lon')
+        dvordx_av = dvordx.sel(lon=lons).mean('lon')
         dvordy_av = dvordy.sel(lon=lons).mean('lon')
         vor_av = vor.sel(lon=lons).mean('lon')*86400.
         v_av = data.vcomp.sel(lon=lons).mean('lon')
         div_av = div.sel(lon=lons).mean('lon')*86400.
+        u_dx_av = u_dx.sel(lon=lons).mean('lon')*86400.
+        v_dy_av = v_dy.sel(lon=lons).mean('lon')*86400.
     
     # If run is ap_2 or full_qflux, then vorticity budget and velocities were saved separately. Load the budget up now
     if run in ['ap_2','full_qflux']:
@@ -129,10 +138,13 @@ def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_on
     # Specify output dictionary to be written
     output_dict = {'horiz_md': (dim_list, horiz_md_av),
                  'stretching':  (dim_list, stretching_av),
+                     'dvordx': (dim_list, dvordx_av),
                      'dvordy': (dim_list, dvordy_av),
                           'v': (dim_list, v_av),
                         'vor': (dim_list, vor_av),
-                        'div':  (dim_list, div_av)}
+                        'div':  (dim_list, div_av),
+                        'u_dx':  (dim_list, u_dx_av),
+                        'v_dy':  (dim_list, v_dy_av)}
                  
     if not (planetary_only or no_eddies):
         if run in ['ap_2','full_qflux']:
@@ -160,7 +172,7 @@ def vort_budg_terms(run, lonin=[-1.,361.], do_ss=False, rot_fac=1., planetary_on
     
 
 
-def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labels=True, rot_fac=1., no_eddies=False, add_psi=True):
+def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labels=True, rot_fac=1., no_eddies=False, add_psi=False):
     '''Plot vorticity budget Hovmoller. RG 3/11/2017
        Imputs: run = run_name
                lev = level to plot
@@ -175,7 +187,7 @@ def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labe
     
     
     if add_psi:
-        data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/' + run + '.nc')
+        data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/' + run + '.nc')
         if lonin[1]>lonin[0]:
             lons = [data.lon[i] for i in range(len(data.lon)) if data.lon[i] >= lonin[0] and data.lon[i] < lonin[1]]
         else:
@@ -221,8 +233,8 @@ def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labe
     
     f2 = ds.horiz_md.plot.contourf(x='xofyear', y='lat', levels=levels, ax=ax1, extend = 'both', add_labels=False)
     if add_psi:
-        ax1.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=150), levels=np.arange(-500.,510.,100.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
-        ax1.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=150), levels=np.arange(-500.,510.,500.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
+        ax1.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=500), levels=np.arange(-500.,510.,100.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
+        ax1.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=500), levels=np.arange(-500.,510.,500.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
     ax1.set_title('Horizontal advection', fontsize=17)
     ax1.text(-15, 60, 'a)')
 
@@ -239,14 +251,18 @@ def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labe
     
     ds.stretching.plot.contourf(x='xofyear', y='lat', levels=levels, ax=ax4, extend = 'both', add_labels=False)
     if add_psi:
-        ax4.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=150), levels=np.arange(-500.,510.,100.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
-        ax4.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=150), levels=np.arange(-500.,510.,500.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
+        ax4.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=500), levels=np.arange(-500.,510.,100.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
+        ax4.contour(data.xofyear, data.lat, -1.*psi.sel(pfull=500), levels=np.arange(-500.,510.,500.), add_labels=False, alpha=0.15, colors='k', linewidths=2)
     ax4.set_title('Vortex stretching', fontsize=17)
     ax4.text(-15, 60, 'd)')
     
-    ds.div.plot.contourf(x='xofyear', y='lat', levels=np.arange(-0.6,0.7,0.1), ax=ax5, extend = 'both', add_labels=False)
+    ds.div.plot.contourf(x='xofyear', y='lat', levels=np.arange(-1.,1.1,0.1), ax=ax5, extend = 'both', add_labels=False)
     ax5.set_title('Divergence', fontsize=17)
     ax5.text(-7, 60, 'e)')
+    
+    #ds.v_dy.plot.contourf(x='xofyear', y='lat', levels=np.arange(-1.,1.1,0.1), ax=ax5, extend = 'both', add_labels=False)
+    #ax5.set_title('dv/dy', fontsize=17)
+    #ax5.text(-7, 60, 'e)')
     
     ds.vor.plot.contourf(x='xofyear', y='lat', levels=np.arange(-12.,13.,2.), ax=ax6, extend = 'both', add_labels=False)
     if planetary_only:
@@ -316,7 +332,7 @@ def vort_eq_hm(run, lev=150., lonin=[-1.,361.], planetary_only=False, month_labe
 
 def vort_eq_ss(run, lonin=[-1.,361.], planetary_only=False, rot_fac=1., no_eddies=False):
     '''Plot steady state vorticity budget in lat-pressure coordinates. RG 3/11/2017
-       Imputs: run = run_name
+       Inputs: run = run_name
                lonin = longitude range to average over
                planetary_only = only plot planetary vorticity terms
                rot_fac = scale factor for Earth's rotation rate
@@ -428,7 +444,7 @@ def vort_eq_ss(run, lonin=[-1.,361.], planetary_only=False, rot_fac=1., no_eddie
 
 
 
-def vort_eq_ll(run, planetary_only=False, rot_fac=1., no_eddies=False, lev=150.):
+def vort_eq_ll(run, planetary_only=False, rot_fac=1., no_eddies=False, lev=150., pcent=True, add_psi=True):
     '''Plot steady state vorticity budget in lat-lon coordinates. RG 3/11/2017
        Imputs: run = run_name
                lonin = longitude range to average over
@@ -450,6 +466,7 @@ def vort_eq_ll(run, planetary_only=False, rot_fac=1., no_eddies=False, lev=150.)
     ds = vort_budg_terms(run, ll=True, rot_fac=rot_fac, planetary_only=planetary_only, no_eddies=no_eddies)
     # Select level to plot
     ds = ds.sel(pfull=lev)
+        
     
     print('starting plotting')
     
@@ -486,7 +503,7 @@ def vort_eq_ll(run, planetary_only=False, rot_fac=1., no_eddies=False, lev=150.)
     ds.div.plot.contourf(x='lon', y='lat', levels=np.arange(-1.,1.1,0.1), ax=ax5, extend = 'both', add_labels=False)
     ax5.set_title('Divergence', fontsize=17)
 
-    ds.vor.plot.contourf(x='lon', y='lat', levels=np.arange(-12.,13.,2.), ax=ax6, extend = 'both', add_labels=False)
+    ds.vor.plot.contourf(x='lon', y='lat', levels=np.arange(-12.,13.,1.), ax=ax6, extend = 'both', add_labels=False)
     if planetary_only:
         ax6.set_title('Planetary vorticity', fontsize=17)
     else:
@@ -502,7 +519,27 @@ def vort_eq_ll(run, planetary_only=False, rot_fac=1., no_eddies=False, lev=150.)
     
         ds.transient_s_hm.plot.contourf(x='lon', y='lat', levels=levels, ax=ax9, extend = 'both', add_labels=False)
         ax9.set_title('Transient vortex stretching', fontsize=17)
+    
+    
+    if add_psi:
+        from hadley_cell import mass_streamfunction_local
+        data = xr.open_dataset('/disca/restore/gv2scratch/rg419/Data_moist/climatologies/qflux_ss/' + run + '.nc')
+        data['mass_sf'] = mass_streamfunction_local(data, dp_in=50.)
+        for ax in all_plots:
+            (data.mass_sf/1.e9).sel(pfull=500.).plot.contour(ax=ax, x='lon', y='lat', levels=np.arange(-700.,701.,100.), add_labels=False, colors='0.7', alpha=0.5)
+            ax.set_xlabel('')
+            ax.set_ylabel('')
 
+    if pcent:
+        from climatology import precip_centroid_ll
+        data = xr.open_dataset('/disca/restore/gv2scratch/rg419/Data_moist/climatologies/qflux_ss/' + run + '.nc')
+        data = precip_centroid_ll(data)
+        for ax in all_plots:
+            data.p_cent.plot.line(ax=ax, color='k')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+        
+        
     #Add grid
     for ax in all_plots:
         ax.grid(True,linestyle=':')
@@ -548,15 +585,22 @@ if __name__ == "__main__":
     #vort_eq_hm('full_qflux', lonin=[60.,150.])
     #vort_eq_hm('full_qflux', lonin=[60.,150.], planetary_only=True)
     
-    #vort_eq_hm('ap_2')
-    #vort_eq_hm('ap_2', planetary_only=True)
-    vort_eq_hm('sn_1.000')
-    #vort_eq_hm('sn_1.000', planetary_only=True)
+    vort_eq_hm('mld_20')
+    #vort_eq_hm('ob_40.000')
+    #vort_eq_hm('sn_1_sst_zs')
 
-    #vort_eq_hm('rt_0.750', rot_fac=0.75)
+
+    #vort_eq_hm('half_shallow', lonin=[340,20])
+    #vort_eq_hm('half_shallow', lonin=[70,110])
+    #vort_eq_hm('half_shallow', lonin=[160,200])
+    #vort_eq_hm('half_shallow', lonin=[250,290])
     #vort_eq_hm('rt_1.500', rot_fac=1.5)
     
     #vort_eq_hm('rt_0.500', rot_fac=0.5)
+    #vort_eq_hm('rt_0.750', rot_fac=0.75)
+    #vort_eq_hm('rt_1.250', rot_fac=1.25)
+    #vort_eq_hm('rt_1.500', rot_fac=1.5)
+    #vort_eq_hm('rt_1.750', rot_fac=1.75)
     #vort_eq_hm('rt_0.500', planetary_only=True, rot_fac=0.5)
     #vort_eq_hm('rt_2.000', rot_fac=2.)
     #vort_eq_hm('rt_2.000', planetary_only=True, rot_fac=2.)

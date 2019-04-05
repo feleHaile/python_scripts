@@ -60,7 +60,7 @@ def p_cent_grad_scatter(run, days=False, period_fac=1., ax=None, color='k', line
         plots to specified/current axes, this can be saved and modified outside the function
     """
     # Open dataset
-    data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/' + run + '.nc')
+    data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/' + run + '.nc')
 
     
     dpcentdt, dpcentdt2 = p_cent_rate(data, days) # Get rate of movement of precip centroid
@@ -112,43 +112,43 @@ if __name__ == "__main__":
 
     # First subplot - year length
     runs = ['sn_0.250', 'sn_0.500', 'sn_1.000', 
-            'sn_2.000', 'sn_4.000']
+            'sn_2.000', 'sn_3.000', 'sn_4.000']
     # Set scaling factors for rate
-    period_fac = [0.25, 0.5, 1., 2., 4.]
+    period_fac = [0.25, 0.5, 1., 2., 3., 4.]
     # Do 0.25 first as this is in days
     p_cent_grad_scatter(runs[0], days=True, color=colors[0], ax=ax1, linewidth=1.)
     # Do other plots, plot sn_1.000 run as thicker line
     j=1
-    for i in range(1,5):
+    for i in range(1,6):
         if runs[i] == 'sn_1.000':
             p_cent_grad_scatter(runs[i], color='k', ax=ax1, linewidth=2.)    
         else:
             p_cent_grad_scatter(runs[i], color=colors[j], ax=ax1, linewidth=1.) 
             j=j+1
-    set_plot_features(ax1, title='Varying Year Lengths', legend_labels=['0.25', '0.5', '1.0', '2.0', '4.0'], leg_title='P/P$_{E}$')
+    set_plot_features(ax1, title='Varying Year Lengths', legend_labels=['0.25', '0.5', '1.0', '2.0', '3.0', '4.0'], leg_title='P/P$_{E}$')
     
     
     # Second subplot - year length, scaled
     runs = ['sn_0.250', 'sn_0.500', 'sn_1.000', 
-            'sn_2.000', 'sn_4.000']
+            'sn_2.000', 'sn_3.000', 'sn_4.000']
     # Set scaling factors for rate
-    period_fac = [0.25, 0.5, 1., 2., 4.]
+    period_fac = [0.25, 0.5, 1., 2., 3., 4.]
     # Do 0.25 first as this is in days
     p_cent_grad_scatter(runs[0], days=True, period_fac=period_fac[0], color=colors[0], ax=ax2, linewidth=1.)
     # Do other plots, plot sn_1.000 run as thicker line
     j=1
-    for i in range(1,5):
+    for i in range(1,6):
         if runs[i] == 'sn_1.000':
             p_cent_grad_scatter(runs[i], color='k', ax=ax2, linewidth=2.)    
         else:
             p_cent_grad_scatter(runs[i], period_fac=period_fac[i], color=colors[j], ax=ax2, linewidth=1.)    
             j=j+1
-    set_plot_features(ax2, title='Varying Year Lengths (Rates scaled)', legend_labels=['0.25', '0.5', '1.0', '2.0', '4.0'], leg_title='P/P$_{E}$')
+    set_plot_features(ax2, title='Varying Year Lengths (Rates scaled)', legend_labels=['0.25', '0.5', '1.0', '2.0', '3.0', '4.0'], leg_title='P/P$_{E}$')
     
     
     # Third subplot - mixed layer depths
     runs = ['mld_2.5', 'mld_5', 'sn_1.000', 
-            'mld_15', 'ap_20']
+            'mld_15', 'mld_20']
     j=0
     for i in range(0,5):
         if runs[i] == 'sn_1.000':

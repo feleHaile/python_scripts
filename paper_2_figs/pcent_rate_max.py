@@ -13,9 +13,9 @@ from pylab import rcParams
 from data_handling_updates import make_sym
 
 
-def precip_load_and_reshape(run, months=[121,181], period_fac=1.):
+def precip_load_and_reshape(run, months=[121,181], period_fac=1., filename='plev_pentad', days=False):
     '''Load and reshape multi-year data into year/day of year shape'''
-    name_temp = '/scratch/rg419/Data_moist/' + run + '/run%04d/plev_pentad.nc'
+    name_temp = '/disca/share/rg419/Data_moist/' + run + '/run%04d/' + filename + '.nc'
     names = [name_temp % m for m in range( months[0], months[1])  ]
     
     #read data into xarray 
@@ -30,11 +30,17 @@ def precip_load_and_reshape(run, months=[121,181], period_fac=1.):
         data = data.precipitation
     
     # Reshape to have dimensions ('year_no', 'xofyear', 'lat', 'lon')
-    data.coords['xofyear'] = np.mod( data.time - 1., 360.*period_fac) //5 + 1.  
-    
-    year_no = np.repeat(np.arange(40.), int(72*period_fac))
-    year_no = (data.time * 0.) + year_no[0: data.time.values.size]
-    data.coords['year_no'] = year_no
+    if days:
+        data.coords['xofyear'] = np.mod( data.time, 360.*period_fac) + 0.5 
+        year_no = np.repeat(np.arange(40.), int(360*period_fac))
+        year_no = (data.time * 0.) + year_no[0: data.time.values.size]
+        data.coords['year_no'] = year_no
+        
+    else:
+        data.coords['xofyear'] = np.mod( data.time - 1., 360.*period_fac) //5 + 1.  
+        year_no = np.repeat(np.arange(40.), int(72*period_fac))
+        year_no = (data.time * 0.) + year_no[0: data.time.values.size]
+        data.coords['year_no'] = year_no
     
     data_rs = data.set_index(time = ['year_no', 'xofyear'])
     data_rs = data_rs.unstack('time')
@@ -69,7 +75,7 @@ def p_cent_rate_max(runs, do_make_sym=True, months=None, days=None, period_fac=1
     for run in runs: 
         if months==None:   # If no months provided, look for a climatology
             # Open dataset
-            data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/' + run + '.nc')
+            data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/' + run + '.nc')
             # Get total precip
             try:
                 data['precipitation'] = data.condensation_rain + data.convection_rain
