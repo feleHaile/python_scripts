@@ -154,7 +154,7 @@ def write_land(exp, filename='land', land_mode='square',boundaries=[[20.,60.,20.
         
         #Tibet from Sauliere 2012
         h_0 = 5700.
-        central_lon = 82.5
+        central_lon = 130. #82.5 #130.
         central_lat = 28
         L_1 = 12.5
         L_2 = 12.5
@@ -189,17 +189,29 @@ def write_land(exp, filename='land', land_mode='square',boundaries=[[20.,60.,20.
         for hill in topo_gauss:
             central_lat = hill[0]
             central_lon = hill[1]
-            radius_degrees = hill[2]
-            std_dev = hill[3]
-            height = hill[4]
-            rsqd_array = np.sqrt((lon_array - central_lon)**2.+(lat_array - central_lat)**2.)
+            L_1 = hill[2]
+            L_2 = hill[3]
+            gamma = hill[4]
+            h_0 = hill[5]
+            delta_1 = ((lon_array - central_lon)*np.cos(np.radians(gamma)) + (lat_array - central_lat)*np.sin(np.radians(gamma)))/L_1
+            delta_2 = (-(lon_array - central_lon)*np.sin(np.radians(gamma)) + (lat_array - central_lat)*np.cos(np.radians(gamma)))/L_2
+            h_arr = h_0 * np.exp(-(delta_1**2. + delta_2**2.))
+            idx = (h_arr / h_0 > 0.05)
+            topo_array[idx] = h_arr[idx]
+            
+            #central_lat = hill[0]
+            #central_lon = hill[1]
+            #radius_degrees = hill[2]
+            #std_dev = hill[3]
+            #height = hill[4]
+            #rsqd_array = np.sqrt((lon_array - central_lon)**2.+(lat_array - central_lat)**2.)
             #generalise to ellipse - needs checking but may be useful later (RG)
             #ax_rot = 1. #gradient of new x axis
             #ax_rat = 2. #axis ratio a**2/b**2
             #rsqd_array = np.sqrt((lon_array - central_lon + ax_rot*(lat_array - central_lat))**2.+ ax_rat*(lat_array - central_lat - ax_rot*(lon_array - central_lon))**2.)*np.cos(np.arctan(ax_rot))
             #divide by factor of cos(atan(m)) to account for change in coords
-            idx = (rsqd_array < radius_degrees) 
-            topo_array[idx] = height* np.exp(-(rsqd_array[idx]**2.)/(2.*std_dev**2.))
+            #idx = (rsqd_array < radius_degrees) 
+            #topo_array[idx] = height* np.exp(-(rsqd_array[idx]**2.)/(2.*std_dev**2.))
         
     else:
         print('Invalid topography option given')
@@ -247,15 +259,29 @@ def write_land(exp, filename='land', land_mode='square',boundaries=[[20.,60.,20.
 
 if __name__ == "__main__":
     
-    #write_land('asym_aquaplanets', filename='half_shallow', land_mode='square', boundaries=[[-90.,90.,0.,180.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_east', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[0., 160., 5., 50., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_centre', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[0., 90., 5., 50., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_west', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[0., 20., 5., 50., 0, 3000.]])
+    
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_0', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[0., 90., 50., 5., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_30N', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[30., 90., 50., 5., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_longhill_10N', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[10., 90., 50., 5., 0, 3000.]])
+    
+    #write_land('asym_aquaplanets', filename='half_shallow_roumdhill_east', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[30., 150., 15., 15., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_roundhill_centre', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[30., 90., 15., 15., 0, 3000.]])
+    #write_land('asym_aquaplanets', filename='half_shallow_roundhill_west', land_mode='square', boundaries=[[-90.,90.,0.,180.]], topo_mode='gaussian', topo_gauss=[[30., 30., 15., 15., 0, 3000.]])
+    
+    #write_land('asym_aquaplanets', filename='half_shallow_t85', land_mode='square', boundaries=[[-90.,90.,0.,180.]])
 
-    write_land('asym_aquaplanets', filename='q_shallow', land_mode='square', boundaries=[[-90.,90.,0.,90.]])
+    #write_land('asym_aquaplanets', filename='q_shallow', land_mode='square', boundaries=[[-90.,90.,0.,90.]])
 
-    write_land('asym_aquaplanets', filename='3q_shallow', land_mode='square', boundaries=[[-90.,90.,0.,270.]])
+    #write_land('asym_aquaplanets', filename='3q_shallow', land_mode='square', boundaries=[[-90.,90.,0.,270.]])
 
     #write_land('asym_aquaplanets', filename='half_nh_shallow', land_mode='square', boundaries=[[0.,90.,0.,180.]])
     
     #write_land('asym_aquaplanets', filename='half_10_shallow', land_mode='square', boundaries=[[10.,90.,0.,180.]])
+    #write_land('asym_aquaplanets', filename='half_nh_land_tibet_t85', land_mode='square', boundaries=[[0.,90.,0.,180.]], topo_mode='sauliere2012', mountains=['tibet'])
+    write_land('asym_aquaplanets', filename='half_nh_land_tibet_diag', land_mode='square', boundaries=[[0.,90.,0.,180.]], topo_mode='sauliere2012', mountains=['tibet'])
     
     #write_land('asym_aquaplanets', filename='half_30_shallow', land_mode='square', boundaries=[[30.,90.,0.,180.]])
         

@@ -272,22 +272,22 @@ if __name__ == "__main__":
         ax4.plot(rots, max_rate_lat_rot_15.values, 'xb', mew=2, ms=10, label='15m')
     
     
-    # Add approximate inverse relation to max rate plot, and approximations to trajectory plots
-    f_crit = max_rate_lat_rot[2].values * rots[2]
-    lat_predictions = f_crit/np.arange(0.,2.5,0.01)
-    ax4.plot(np.arange(0.,2.5,0.01), lat_predictions,'k')
+    # Add approximate inverse relation to max rate plot, and approximations to trajectory plots - removed for revisions
+    #f_crit = max_rate_lat_rot[2].values * rots[2]
+    #lat_predictions = f_crit/np.arange(0.,2.5,0.01)
+    #ax4.plot(np.arange(0.,2.5,0.01), lat_predictions,'k')
     
-    line, consts = fit_data(rots[1:], max_rate_lat_rot.values[1:], np.arange(0.,2.5,0.01))
-    ax4.plot(np.arange(0.,2.5,0.01), line, '0.7')
+    #line, consts = fit_data(rots[1:], max_rate_lat_rot.values[1:], np.arange(0.,2.5,0.01))
+    #ax4.plot(np.arange(0.,2.5,0.01), line, '0.7')
     
-    lat_predictions = f_crit/rots
+    #lat_predictions = f_crit/rots
     
     colors=['C0','C1','k','C2','C3','C4','C5','C6']    
     
-    for i in range(7):
-        ax1.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
-        ax3.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
-        ax5.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
+    #for i in range(7):
+    #    ax1.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
+    #    ax3.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
+    #    ax5.plot([lat_predictions[i],lat_predictions[i]], [-1.,1.], colors[i]+'--', alpha=0.5)
     
     # Add labels 
     ax2.set_ylabel('ITCZ migration rate')

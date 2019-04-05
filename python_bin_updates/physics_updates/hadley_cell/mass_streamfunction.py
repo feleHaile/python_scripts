@@ -22,7 +22,7 @@ def mass_streamfunction(data, a=6376.0e3, g=9.8, lons=[-1000], dp_in=0., intdown
     if lons[0]==-1000: #Use large negative value to use all data if no lons provided
         vbar = data.vcomp.mean('lon')
     elif use_v_locally:
-        vbar = data.vcomp.sel(lon=lons).mean('lon')
+        vbar = data.vcomp.sel(lon=lons).mean('lon').sortby('pfull', ascending=False)
     else:
         from windspharm.xarray import VectorWind
         # Create a VectorWind instance to handle the computation

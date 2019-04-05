@@ -48,7 +48,7 @@ def precip_mse_plot(data, ax_in, lonin=[-1.,361.], do_xlabels=False, plot_type=N
         
     elif plot_type == 'precip':
         # No mse, plot precip and precip centroid
-        f1 = precip_plot.plot.contourf(ax=ax_in, x='xofyear', y='lat', levels = np.arange(2.,15.,2.), add_colorbar=False, add_labels=False, extend='max', cmap='Blues', linewidth=2)
+        f1 = precip_plot.plot.contourf(ax=ax_in, x='xofyear', y='lat', levels = np.arange(3.,16.,3.), add_colorbar=False, add_labels=False, extend='max', cmap='Blues', linewidth=2)
         if p_cent:
             data = precip_centroid(data,lonin=lonin, lat_bound=lat_bound)
             data.p_cent.plot.line(color='k', ax=ax_in, linewidth=2)

@@ -107,7 +107,8 @@ fig, ((ax1), (ax2)) = plt.subplots(2, 1)
 
 
 fig_9('sn_1.000_evap_fluxes_heattrans', ax=ax1)
-fig_9('sn_1_sst_zs', ax=ax2, eddies=False)
+#fig_9('sn_1_sst_zs', ax=ax2, eddies=False)
+fig_9('sn_1.000_zs_sst', ax=ax2, eddies=False)
 
 ax1.text(-5, 350., 'a)')
 ax2.text(-5, 660., 'b)')
@@ -120,6 +121,7 @@ ax2.set_title('control-zs')
 
 plt.subplots_adjust(left=0.15, right=0.95, top=0.97, bottom=0.07, hspace=0.3)
 
-plt.savefig(plot_dir+'bs10_fig9.pdf', format='pdf')
+#plt.savefig(plot_dir+'bs10_fig9.pdf', format='pdf')
+plt.savefig(plot_dir+'bs10_fig9_diff.pdf', format='pdf')
 plt.close()
 plt.show()

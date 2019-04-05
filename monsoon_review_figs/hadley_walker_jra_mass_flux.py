@@ -19,6 +19,9 @@ def h_w_mass_flux_monthly(lev=50000., dp=5000.):
     land_mask='/scratch/rg419/python_scripts/land_era/ERA-I_Invariant_0125.nc'
     land = xr.open_dataset(land_mask)
     
+    data_u = data_u.sel(time=slice('1979','2016'))
+    data_v = data_v.sel(time=slice('1979','2016'))
+    
     # Make climatologies
     u_clim = data_u.groupby('time.month').mean('time')
     v_clim = data_v.groupby('time.month').mean('time')
@@ -40,7 +43,7 @@ def h_w_mass_flux_monthly(lev=50000., dp=5000.):
     mass_flux_merid = (gr.ddy(vchi.sel(lev=np.arange(5000.,100000., 5000.)))).cumsum('lev') * dp * coslat/ mc.grav
     
     # Set figure parameters
-    rcParams['figure.figsize'] = 15, 11
+    rcParams['figure.figsize'] = 15, 9
     rcParams['font.size'] = 16
     
     # Start figure with 4 subplots
@@ -48,13 +51,13 @@ def h_w_mass_flux_monthly(lev=50000., dp=5000.):
     axes = [ax1, ax2, ax3, ax4]
 
     f1 = mass_flux_merid.sel(lev=lev, month=[5,6,7,8,9]).mean('month').plot.contourf(
-              ax=ax1, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.006,0.001), extend='both')
+              ax=ax1, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.007,0.001), extend='both')
     f1 = mass_flux_zon.sel(lev=lev, month=[5,6,7,8,9]).mean('month').plot.contourf(
-              ax=ax2, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.006,0.001), extend='both')
+              ax=ax2, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.007,0.001), extend='both')
     f1 = mass_flux_merid.sel(lev=lev, month=[11,12,1,2,3]).mean('month').plot.contourf(
-              ax=ax3, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.006,0.001), extend='both')
+              ax=ax3, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.007,0.001), extend='both')
     f1 = mass_flux_zon.sel(lev=lev, month=[11,12,1,2,3]).mean('month').plot.contourf(
-              ax=ax4, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.006,0.001), extend='both')
+              ax=ax4, x='lon', y='lat', add_labels=False, add_colorbar=False, levels=np.arange(-0.006,0.007,0.001), extend='both')
     
     i=0
     for ax in axes:
@@ -65,8 +68,13 @@ def h_w_mass_flux_monthly(lev=50000., dp=5000.):
         ax.set_xticks(np.arange(0,361,90))
         ax.set_yticks(np.arange(-60,61,30))
         ax.grid(True,linestyle=':')
+        ax.set_xlim(0,360)
     
-    plt.subplots_adjust(left=0.05, right=0.97, top=0.95, bottom=0.1, hspace=0.1, wspace=0.1)
+    ax1.text(-40, 60, 'a)')
+    ax2.text(-30, 60, 'b)')
+    ax3.text(-40, 60, 'c)')
+    ax4.text(-30, 60, 'd)')
+    plt.subplots_adjust(left=0.05, right=0.97, top=0.95, bottom=0.05, hspace=0.1, wspace=0.1)
     
     cb1=fig.colorbar(f1, ax=axes, use_gridspec=True, orientation = 'horizontal',fraction=0.05, pad=0.1, aspect=30, shrink=0.5)
     cb1.set_label('Vertical mass flux, kgm$^{-2}$s$^{-1}$')

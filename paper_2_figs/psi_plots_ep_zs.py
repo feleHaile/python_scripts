@@ -13,7 +13,8 @@ from hadley_cell import mass_streamfunction
 from data_handling_updates import model_constants as mc
 
 data_sn1 = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sn_1.000.nc')
-data_sn1_zs = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sn_1_sst_zs.nc')
+#data_sn1_zs = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sn_1_sst_zs.nc')
+data_sn1_zs = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sn_1.000_zs_sst.nc')
 data_sine = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sine_sst_10m.nc')
 data_sine_zs = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/sine_sst_10m_zs.nc')
 
@@ -62,17 +63,26 @@ fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='col', share
 plt.set_cmap('RdBu_r')
     
 
-f1=psi_u_plot(data_sn1, [31,35], ax=ax1)
-psi_u_plot(data_sn1, [38,42], ax=ax2)
-psi_u_plot(data_sn1, [45,49], ax=ax3)
+#f1=psi_u_plot(data_sn1, [31,35], ax=ax1)   Time frames changed so that equinox picture gives better idea of symmetry
+f1=psi_u_plot(data_sn1, [36,38], ax=ax1)
+#print(data_sn1.xofyear[36:38])
+#print(data_sn1.xofyear[40:42])
+#print(data_sn1.xofyear[44:46])
+#psi_u_plot(data_sn1, [38,42], ax=ax2)
+psi_u_plot(data_sn1, [40,42], ax=ax2)
+#psi_u_plot(data_sn1, [45,49], ax=ax3)
+psi_u_plot(data_sn1, [44,46], ax=ax3)
 
 #psi_u_plot(data_sine, [31,35], ax=ax4)
 #psi_u_plot(data_sine, [38,42], ax=ax5)
 #psi_u_plot(data_sine, [45,49], ax=ax6)
 
-psi_u_plot(data_sn1_zs, [31,35], ax=ax4)
-psi_u_plot(data_sn1_zs, [38,42], ax=ax5)
-psi_u_plot(data_sn1_zs, [45,49], ax=ax6)
+#psi_u_plot(data_sn1_zs, [31,35], ax=ax4)
+psi_u_plot(data_sn1_zs, [36,38], ax=ax4)
+#psi_u_plot(data_sn1_zs, [38,42], ax=ax5)
+psi_u_plot(data_sn1_zs, [40,42], ax=ax5)
+#psi_u_plot(data_sn1_zs, [45,49], ax=ax6)
+psi_u_plot(data_sn1_zs, [44,46], ax=ax6)
 
 #psi_u_plot(data_sine_zs, [31,35], ax=ax10)
 #psi_u_plot(data_sine_zs, [38,42], ax=ax11)
@@ -86,9 +96,9 @@ for ax in [ax1, ax4]: #, ax7, ax10]:
     ax.set_ylabel('Pressure, hPa')
     ax.set_yticks([0,200,400,600,800,1000.])
     
-ax1.set_title('Pentad 32-35', fontsize=14)
-ax2.set_title('Pentad 39-42', fontsize=14)
-ax3.set_title('Pentad 46-49', fontsize=14)
+ax1.set_title('Pentad 37-38', fontsize=14)
+ax2.set_title('Pentad 41-42', fontsize=14)
+ax3.set_title('Pentad 45-46', fontsize=14)
 
 i=0
 labels=['b)','c)','e)','f)']
@@ -108,5 +118,6 @@ plt.subplots_adjust(left=0.08, right=0.98, top=0.95, bottom=0.03, hspace=0.2, ws
 cb1=fig.colorbar(f1, ax=axes, use_gridspec=True, orientation = 'horizontal',fraction=0.1, pad=0.12, aspect=30, shrink=0.5)
 cb1.set_label('Zonal wind speed, m/s')
 
-plt.savefig(plot_dir+'psi_ep_zs.pdf', format='pdf')
+#plt.savefig(plot_dir+'psi_ep_zs.pdf', format='pdf')
+plt.savefig(plot_dir+'psi_ep_zs_diff.pdf', format='pdf')
 plt.close()        

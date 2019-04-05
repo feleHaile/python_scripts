@@ -55,6 +55,7 @@ def relative_rain(run, real_conts=False, land_mask_name=None):
     
     land = xr.open_dataset(land_mask)
     land.land_mask.plot.contour(ax=ax1, x='lon', y='lat', levels=np.arange(-1.,2.,1.), add_labels=False, colors='k')
+    land.zsurf.plot.contour(ax=ax1, x='lon', y='lat', levels=np.arange(0.,2001.,1000.), add_labels=False, colors='k')
     ax1.grid(True,linestyle=':')
     ax1.set_ylim([0,50])
     ax1.set_xticks(np.arange(0.,361.,60.))
@@ -266,12 +267,15 @@ def relative_rain_gpcp_years(years=[1997]):
 
 if __name__ == "__main__":
     
-    #relative_rain('half_shallow')
-    relative_rain('half_dry', land_mask_name='half_shallow')
-    relative_rain('half_bright', land_mask_name='half_shallow')
-    #relative_rain('half_shallow_5', land_mask_name='half_shallow')
-    #relative_rain('half_shallow_10', land_mask_name='half_shallow')
-    #relative_rain('half_nh_shallow')
+    #relative_rain('half_land_roundhill_centre', land_mask_name='half_shallow_roundhill_centre')
+    #relative_rain('half_land_roundhill_east', land_mask_name='half_shallow_roundhill_east')
+    #relative_rain('half_land_roundhill_west', land_mask_name='half_shallow_roundhill_west')
+    #relative_rain('half_nh_land', land_mask_name='half_nh_shallow')
+    relative_rain('half_nh_land_tibet_ol4', land_mask_name='half_nh_land_tibet')
+    relative_rain('half_nh_land_tibet_ol5', land_mask_name='half_nh_land_tibet')
+    relative_rain('half_nh_land_tibet_ol8', land_mask_name='half_nh_land_tibet')
+    #relative_rain('half_30_land', land_mask_name='half_30_shallow')
+    
     #relative_rain('q_shallow')
     #relative_rain('3q_shallow')
     

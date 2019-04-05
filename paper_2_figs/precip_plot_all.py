@@ -22,7 +22,7 @@ rcParams['font.size'] = 14
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
 
-def precip_psi_plot(run, ax, label='a)'):
+def precip_psi_plot(run, ax, label='a)', p_cent=True):
     
     data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/' + run + '.nc')
     psi = mass_streamfunction(data, a=6376.0e3, dp_in=50.)
@@ -31,11 +31,11 @@ def precip_psi_plot(run, ax, label='a)'):
     psi = make_sym(psi, asym=True)
     data['precipitation'] = make_sym(data.precipitation)
     
-    f1 = precip_mse_plot(data, ax, plot_type='precip', precip_contour=None)
+    f1 = precip_mse_plot(data, ax, plot_type='precip', precip_contour=None, p_cent=p_cent)
     
-    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(-500.,0.,100.), add_labels=False, colors='0.7', linewidths=2, linestyles='--')
-    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(0.,510.,100.), add_labels=False, colors='0.7', linewidths=2)
-    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(-1000.,1010.,1000.), add_labels=False, colors='0.5', linewidths=2)
+    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(-500.,0.,100.), add_labels=False, colors='0.7', linewidths=2, linestyles='--', alpha=0.7)
+    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(0.,510.,100.), add_labels=False, colors='0.7', linewidths=2, alpha=0.7)
+    psi.sel(pfull=500).plot.contour(ax=ax, x='xofyear', y='lat', levels=np.arange(-1000.,1010.,1000.), add_labels=False, colors='0.5', linewidths=2, alpha=0.7)
     
     ax.text(-10, 60, label)
     
@@ -46,7 +46,7 @@ def precip_psi_plot(run, ax, label='a)'):
 f1 = precip_psi_plot('sn_1.000', ax=ax1)
 #ax1.plot(np.arange(0.,361.,1.)/5.,subsolar_point,'m')
 #precip_psi_plot('sine_sst_10m', ax=ax2, label='b)')
-precip_psi_plot('sn_1.000_wishe_fixed_wind', ax=ax2, label='b)')
+precip_psi_plot('sn_1.000_wishe_fixed_wind', ax=ax2, label='b)', p_cent=False)
 #precip_psi_plot('sn_1.000_evap_fluxes_fixed_wind', ax=ax2, label='b)')
 
 precip_psi_plot('sn_1_sst_zs', ax=ax3, label='c)')
@@ -55,11 +55,19 @@ ax3.set_xticks([12,24,36,48,60,72])
 ax3.set_xlabel('Pentad')
 
 ax3.set_xlim([1,72])
-ax3.fill_between([32.,35.], -60, 60,
+#ax3.fill_between([32.,35.], -60, 60,
+#                facecolor='k', alpha=0.2)
+#ax3.fill_between([39.,42.], -60, 60,
+#                facecolor='k', alpha=0.2)
+#ax3.fill_between([46.,49.], -60, 60,
+#                facecolor='k', alpha=0.2)
+
+for ax in [ax1, ax3]:
+    ax.fill_between([37.,38.], -60, 60,
                 facecolor='k', alpha=0.2)
-ax3.fill_between([39.,42.], -60, 60,
+    ax.fill_between([41.,42.], -60, 60,
                 facecolor='k', alpha=0.2)
-ax3.fill_between([46.,49.], -60, 60,
+    ax.fill_between([45.,46.], -60, 60,
                 facecolor='k', alpha=0.2)
 
 

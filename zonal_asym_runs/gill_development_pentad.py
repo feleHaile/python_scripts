@@ -13,7 +13,7 @@ from data_handling_updates import model_constants as mc
 
 def plot_gill_dev(run, land_mask=None, lev=850, qscale=100., windtype='full', ref_arrow=5, mse=False, video=False):
     
-    data = xr.open_dataset('/scratch/rg419/Data_moist/climatologies/' + run + '.nc')
+    data = xr.open_dataset('/disca/share/rg419/Data_moist/climatologies/' + run + '.nc')
     
     data['mse'] = (mc.cp_air * data.temp + mc.L * data.sphum + mc.grav * data.height)/1000.
     data['precipitation'] = (data.precipitation*86400.)
@@ -22,13 +22,14 @@ def plot_gill_dev(run, land_mask=None, lev=850, qscale=100., windtype='full', re
     data_zanom = data - data.mean('lon')
     
     # Get rotational and divergent components of the flow
-    w = VectorWind(data.ucomp.sel(pfull=lev), data.vcomp.sel(pfull=lev))
-    streamfun, vel_pot = w.sfvp()
-    uchi, vchi, upsi, vpsi = w.helmholtz()
-    uchi_zanom = (uchi - uchi.mean('lon')).sortby('lat')
-    vchi_zanom = (vchi - vchi.mean('lon')).sortby('lat')
-    upsi_zanom = (upsi - upsi.mean('lon')).sortby('lat')
-    vpsi_zanom = (vpsi - vpsi.mean('lon')).sortby('lat')
+    if windtype == 'div' or windtype=='rot':
+        w = VectorWind(data.ucomp.sel(pfull=lev), data.vcomp.sel(pfull=lev))
+        streamfun, vel_pot = w.sfvp()
+        uchi, vchi, upsi, vpsi = w.helmholtz()
+        uchi_zanom = (uchi - uchi.mean('lon')).sortby('lat')
+        vchi_zanom = (vchi - vchi.mean('lon')).sortby('lat')
+        upsi_zanom = (upsi - upsi.mean('lon')).sortby('lat')
+        vpsi_zanom = (vpsi - vpsi.mean('lon')).sortby('lat')
     
     # Start figure with 1 subplots
     rcParams['figure.figsize'] = 10, 5
@@ -46,10 +47,10 @@ def plot_gill_dev(run, land_mask=None, lev=850, qscale=100., windtype='full', re
         ax1.contour(data_zanom.lon, data_zanom.lat, data_zanom.slp[i,:,:], levels = np.arange(-15.,0.,3.), colors='0.4', alpha=0.5, linestyle='--', zorder=2)
         if windtype=='div':
             b = ax1.quiver(data.lon[::6], data.lat[::3], uchi_zanom[i,::3,::6], vchi_zanom[i,::3,::6], scale=qscale, angles='xy', width=0.005, headwidth=3., headlength=5., zorder=3)
-            ax1.quiverkey(b, 0.,-0.5, ref_arrow, str(ref_arrow) + ' m/s', fontproperties={'weight': 'bold', 'size': 10}, color='k', labelcolor='k', labelsep=0.03, zorder=10)
+            ax1.quiverkey(b, 5.,65., ref_arrow, str(ref_arrow) + ' m/s', fontproperties={'weight': 'bold', 'size': 10}, color='k', labelcolor='k', labelsep=0.03, zorder=10)
         elif windtype=='rot':
             b = ax1.quiver(data.lon[::6], data.lat[::3], upsi_zanom[i,::3,::6], vpsi_zanom[i,::3,::6], scale=qscale, angles='xy', width=0.005, headwidth=3., headlength=5., zorder=3)
-            ax1.quiverkey(b, 0.,-0.5, ref_arrow, str(ref_arrow) + ' m/s', fontproperties={'weight': 'bold', 'size': 10}, color='k', labelcolor='k', labelsep=0.03, zorder=10)
+            ax1.quiverkey(b, 5.,65., ref_arrow, str(ref_arrow) + ' m/s', fontproperties={'weight': 'bold', 'size': 10}, color='k', labelcolor='k', labelsep=0.03, zorder=10)
         elif windtype=='full':
             b = ax1.quiver(data.lon[::6], data.lat[::3], data_zanom.ucomp.sel(pfull=lev)[i,::3,::6], data_zanom.vcomp.sel(pfull=lev)[i,::3,::6], scale=qscale, angles='xy', width=0.005, headwidth=3., headlength=5., zorder=3)
             ax1.quiverkey(b, 5.,65., ref_arrow, str(ref_arrow) + ' m/s', coordinates='data', fontproperties={'weight': 'bold', 'size': 10}, color='k', labelcolor='k', labelsep=0.03, zorder=10)
@@ -63,6 +64,7 @@ def plot_gill_dev(run, land_mask=None, lev=850, qscale=100., windtype='full', re
         if not land_mask==None:
             land = xr.open_dataset(land_mask)
             land.land_mask.plot.contour(x='lon', y='lat', ax=ax1, levels=np.arange(-1.,2.,1.), add_labels=False, colors='k')    
+            land.zsurf.plot.contour(ax=ax1, x='lon', y='lat', levels=np.arange(0.,2001.,1000.), add_labels=False, colors='k')
         ax1.set_ylabel('Latitude')
         ax1.set_xlabel('Longitude')
     
@@ -98,19 +100,31 @@ def make_video(filepattern, output):
 
 if __name__ == "__main__":
     
-    #plot_gill_dev('half_shallow', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='div', video=True)
-    #plot_gill_dev('half_shallow', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='none', video=True)
-    #plot_gill_dev('half_shallow', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='full', video=True)
-    plot_gill_dev('half_shallow', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='full', mse=True, video=True)
-    #plot_gill_dev('half_shallow', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='full', mse=True)
-
-    #make_video('/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/div/wind_and_slp_zanom_%02d_div.png', 
-    #                  '/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/div/precip_and_slp_anom.mp4')
+    plot_gill_dev('half_nh_land_tibet_ol8', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True)
+    plot_gill_dev('half_nh_land_tibet_ol8', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none')
     
-    make_video('/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/full_mse/wind_and_slp_zanom_%02d_mse.png', 
-                      '/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/full_mse/mse_and_slp_anom.mp4')
+    plot_gill_dev('half_nh_land_tibet_ol8', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True, video=True)
+    plot_gill_dev('half_nh_land_tibet_ol8', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none', video=True)
 
-    #make_video('/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/full/wind_and_slp_zanom_%02d.png', 
-    #                  '/scratch/rg419/plots/zonal_asym_runs/gill_development/half_shallow/video/full/precip_and_slp_anom.mp4')
-                            
-                            
+    
+    plot_gill_dev('half_nh_land_tibet_ol4', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True)
+    plot_gill_dev('half_nh_land_tibet_ol4', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none')
+    
+    plot_gill_dev('half_nh_land_tibet_ol4', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True, video=True)
+    plot_gill_dev('half_nh_land_tibet_ol4', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none', video=True)
+
+
+    
+    plot_gill_dev('half_nh_land_tibet_ol5', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True)
+    plot_gill_dev('half_nh_land_tibet_ol5', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none')
+    
+    plot_gill_dev('half_nh_land_tibet_ol5', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='full', mse=True, video=True)
+    plot_gill_dev('half_nh_land_tibet_ol5', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_nh_land_tibet.nc', windtype='none', video=True)
+
+    #make_video('/scratch/rg419/plots/zonal_asym_runs/gill_development/half_land/video/none/wind_and_slp_zanom_%02d_none.png', 
+    #                  '/scratch/rg419/plots/zonal_asym_runs/gill_development/half_land/video/none/precip_and_slp_anom.mp4')
+    
+    
+    #plot_gill_dev('half_land_roundhill_east', land_mask = '/scratch/rg419/Experiments/asym_aquaplanets/input/half_shallow.nc', windtype='none')
+    
+   
