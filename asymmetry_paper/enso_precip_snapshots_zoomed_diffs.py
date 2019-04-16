@@ -94,27 +94,39 @@ def plot_gill_dev_cmap(ax, pentad, nino34='all'):
         data_u = data_u.drop('enso_phase').groupby('pentad').mean('pentad')
         data_v = data_v.drop('enso_phase').groupby('pentad').mean('pentad')
     elif nino34=='en':
-        data_precip = data_precip.where(data_precip['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('time')
-        data_slp = data_slp.where(data_slp['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_u = data_u.where(data_u['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_v = data_v.where(data_v['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
+        data_precip = data_precip.where(data_precip['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('time') - data_precip.groupby('pentad').mean('time')
+        data_slp = data_slp.where(data_slp['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_slp.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_u = data_u.where(data_u['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_u.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_v = data_v.where(data_v['enso_phase']=='El Nino', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_v.drop('enso_phase').groupby('pentad').mean('pentad')
     elif nino34=='ne':
-        data_precip= data_precip.where(data_precip['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('time')
-        data_slp = data_slp.where(data_slp['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_u = data_u.where(data_u['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_v = data_v.where(data_v['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
+        data_precip= data_precip.where(data_precip['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('time') - data_precip.groupby('pentad').mean('time')
+        data_slp = data_slp.where(data_slp['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_slp.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_u = data_u.where(data_u['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_u.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_v = data_v.where(data_v['enso_phase']=='Neutral', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_v.drop('enso_phase').groupby('pentad').mean('pentad')
     elif nino34=='ln':
-        data_precip = data_precip.where(data_precip['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('time')
-        data_slp = data_slp.where(data_slp['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_u = data_u.where(data_u['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
-        data_v = data_v.where(data_v['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad')
+        data_precip = data_precip.where(data_precip['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('time') - data_precip.groupby('pentad').mean('time')
+        data_slp = data_slp.where(data_slp['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_slp.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_u = data_u.where(data_u['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_u.drop('enso_phase').groupby('pentad').mean('pentad')
+        data_v = data_v.where(data_v['enso_phase']=='La Nina', drop=True).drop('enso_phase').groupby('pentad').mean('pentad') - data_v.drop('enso_phase').groupby('pentad').mean('pentad')
     
-    
-    title = 'Pentad ' + str(int(pentad))       
-    f1 = data_precip.precip.sel(pentad=pentad).plot.contourf(x='lon', y='lat', ax=ax, levels = np.arange(3.,19.,3.), add_labels=False, add_colorbar=False, extend='both',  cmap='Blues', zorder=1)
-    ax.contour(data_slp.lon, data_slp.lat, data_slp.sel(pentad=pentad).values, levels = np.arange(0.,16.,3.), colors='0.4', alpha=0.5, zorder=3)
-    ax.contour(data_slp.lon, data_slp.lat, data_slp.sel(pentad=pentad), levels = np.arange(-15.,0.,3.), colors='0.4', alpha=0.5, linestyle='--', zorder=3)
-    b = ax.quiver(data_u.lon[::6], data_u.lat[::3], data_u.sel(pentad=pentad)[::3,::6], data_v.sel(pentad=pentad)[::3,::6], scale=100, angles='xy', width=0.01, headwidth=3., headlength=5., zorder=3)
+    if nino34=='all':
+        levels_p = np.arange(3.,19.,3.)
+        levels_slp_p = np.arange(0.,16.,3.)
+        levels_slp_n = np.arange(-15.,0.,3.)
+        sc = 100
+        cmap_p = 'Blues'
+    else:
+        levels_p = np.arange(-10.,11.,1.)
+        levels_slp_p = np.arange(0.,6.,1.)
+        levels_slp_n = np.arange(-5.,0.,1.)
+        sc=50
+        cmap_p = 'RdBu_r'
+        
+    title = 'Pentad ' + str(int(pentad))
+    f1 = data_precip.precip.sel(pentad=pentad).plot.contourf(x='lon', y='lat', ax=ax, levels = levels_p, add_labels=False, add_colorbar=False, extend='both',  cmap=cmap_p, zorder=1)
+    ax.contour(data_slp.lon, data_slp.lat, data_slp.sel(pentad=pentad).values, levels = levels_slp_p, colors='0.4', alpha=0.5, zorder=3)
+    ax.contour(data_slp.lon, data_slp.lat, data_slp.sel(pentad=pentad), levels = levels_slp_n, colors='0.4', alpha=0.5, linestyle='--', zorder=3)
+    b = ax.quiver(data_u.lon[::6], data_u.lat[::3], data_u.sel(pentad=pentad)[::3,::6], data_v.sel(pentad=pentad)[::3,::6], scale=sc, angles='xy', width=0.01, headwidth=3., headlength=5., zorder=3)
     ax.grid(True,linestyle=':')
     ax.set_ylim(-15.,45.)
     ax.set_yticks(np.arange(-15.,45.,15.))
@@ -164,10 +176,10 @@ for ax in [ax17, ax18, ax19, ax20]:
     ax.set_xlabel('Longitude')
 
 plt.subplots_adjust(left=0.07, right=0.97, top=0.97, bottom=0.05, hspace=0.3, wspace=0.15)
-cb1=fig.colorbar(f1, ax=axes, use_gridspec=True, orientation = 'horizontal',fraction=0.02, pad=0.07, aspect=30, shrink=0.5)
-cb1.set_label('Precipitation, mm/day')
+#cb1=fig.colorbar(f1, ax=axes, use_gridspec=True, orientation = 'horizontal',fraction=0.02, pad=0.07, aspect=30, shrink=0.5)
+#cb1.set_label('Precipitation, mm/day')
 
 # Save as a pdf
-plt.savefig(plot_dir + 'enso_precip_snapshots_zoomed.pdf', format='pdf')
+plt.savefig(plot_dir + 'enso_precip_snapshots_zoomed_diffs.pdf', format='pdf')
 plt.close()
 
